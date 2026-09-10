@@ -1,0 +1,44 @@
+# Vercel ignore file – exclude development / heavy artefacts
+# Virtual environments and caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# IDE / editor metadata
+.vscode/
+.idea/
+
+# Logs and temporary files
+*.log
+scratch/
+refresh_all_predictions.log
+
+# Large media used only for demos / documentation
+Comparing_viable_and_nonviable_t*.gif
+Medical_tissue_viability_3D_visu*.gif
+static/media/*.gif
+static/media/*.png
+
+# Raw datasets and training artefacts (not needed at runtime)
+dataset/
+saved_models/
+model/validation_predictions.csv
+
+# Local SQLite databases and backups (will be replaced by a persistent store later)
+database/instance/*.db*
+instance/*.db*
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+
+# Test / benchmark scripts
+test_*.py
+benchmark_*.py
+*_benchmark.py
+validation/
+
+# Any other large generated files not referenced by the code
+# (Add more patterns if discovered)

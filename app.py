@@ -1098,12 +1098,10 @@ def add_security_headers(response):
 # APPLICATION START
 # ============================================================
 
-if __name__ == "__main__":
-
+if not os.getenv("VERCEL"):
     from prediction_scheduler import start_prediction_scheduler
-
     start_prediction_scheduler(app, reloader_guard=True)
-    
+
     print("\n========================================")
     print("   TISSUE VIABILITY PREDICTION SYSTEM")
     print("========================================")

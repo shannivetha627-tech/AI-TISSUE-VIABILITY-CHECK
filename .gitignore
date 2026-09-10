@@ -8,3 +8,5 @@ __pycache__/
 face_auth/enrolled_faces/
 face_auth/embeddings/
 *.log
+
+.vercel
