@@ -18,11 +18,8 @@ from flask import (
 
 from database.database import db
 from database.models import User, Patient, Prediction, PredictionHistory
-from face_auth.face_verification import (
-    extract_face_embedding,
-    serialize_embedding,
-    verify_face,
-)
+# Face authentication imports are loaded lazily in production to avoid heavy dependencies
+
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 from prediction import predict_tissue_viability
@@ -33,6 +30,25 @@ from prediction import predict_tissue_viability
 # ============================================================
 
 app = Flask(__name__)
+
+# ---------------------------------------------------------------------------
+# Lazy import for face authentication (optional heavy dependencies)
+# ---------------------------------------------------------------------------
+def _load_face_auth():
+    """Attempt to import face authentication utilities.
+    Returns a tuple (extract_face_embedding, serialize_embedding, verify_face).
+    If any import fails (e.g., missing mediapipe or opencv), returns (None, None, None).
+    """
+    try:
+        from face_auth.face_verification import (
+            extract_face_embedding,
+            serialize_embedding,
+            verify_face,
+        )
+        return extract_face_embedding, serialize_embedding, verify_face
+    except Exception as e:
+        app.logger.warning("Face authentication unavailable: %s", e)
+        return None, None, None
 
 
 # ============================================================
@@ -452,6 +468,16 @@ def doctor_face_lock():
 @app.route("/doctor/verify-face", methods=["POST"])
 def verify_doctor_face():
     """Promote a pending doctor session after the camera check succeeds."""
+    # Load face auth utilities lazily; if unavailable, return a clear error
+    extract_face_embedding, serialize_embedding, verify_face = _load_face_auth()
+    if verify_face is None:
+        return jsonify({
+            "verified": False,
+            "success": False,
+            "message": "Face verification service temporarily unavailable",
+
+        }), 503
+
     if not pending_doctor_required():
         message = "Verification session expired."
         return jsonify({"verified": False, "success": False, "message": message, "error": message}), 403
@@ -512,6 +538,15 @@ def verify_doctor_face():
 @app.route("/doctor/register-face", methods=["GET", "POST"])
 def register_doctor_face():
     """Enroll one normalized face representation after password authentication."""
+    # Lazy load face auth utilities; if unavailable, return a clear error
+    extract_face_embedding, serialize_embedding, verify_face = _load_face_auth()
+    if extract_face_embedding is None or serialize_embedding is None:
+        return jsonify({
+            "success": False,
+            "message": "Face registration service temporarily unavailable",
+
+        }), 503
+
     if not pending_doctor_required() and not doctor_required():
         if request.method == "POST":
             return jsonify({
