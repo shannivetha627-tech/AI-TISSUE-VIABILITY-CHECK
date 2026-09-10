@@ -1,0 +1,10 @@
+*.db
+database/instance/
+instance/
+.env
+venv/
+__pycache__/
+*.py[cod]
+face_auth/enrolled_faces/
+face_auth/embeddings/
+*.log

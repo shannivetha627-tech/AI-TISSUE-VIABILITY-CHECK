@@ -26,9 +26,8 @@ sample = {
 df = pd.DataFrame([sample])
 
 prediction = model.predict(df)
-prediction = model.predict(df)
 
-if prediction[0] == 1:
-    print("\nPrediction: Tissue is VIABLE ✅")
+if prediction[0] == 1 or prediction[0] == "Yes":
+    print("\nPrediction: Tissue is VIABLE [OK]")
 else:
-    print("\nPrediction: Tissue is NOT VIABLE ❌")
+    print("\nPrediction: Tissue is NOT VIABLE [ALERT]")

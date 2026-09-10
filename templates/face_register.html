@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register Doctor Face | TissueGuard AI</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f5fbff;
+        --muted: #9bb2c6;
+        --panel: rgba(13, 33, 51, 0.9);
+        --line: rgba(133, 211, 239, 0.25);
+        --cyan: #64d8ee;
+        --green: #76e0ad;
+        --red: #ff9d9d;
+        --amber: #ffd28a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        background: radial-gradient(
+          circle at 50% 0,
+          #173b55 0,
+          #07131f 48%,
+          #040a11 100%
+        );
+      }
+      main {
+        width: min(100%, 680px);
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: var(--panel);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      }
+      .eyebrow {
+        color: var(--cyan);
+        font:
+          700 11px Arial,
+          sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 14px 0 8px;
+        font-size: 42px;
+        font-weight: 500;
+      }
+      p {
+        color: var(--muted);
+        font:
+          14px/1.6 Arial,
+          sans-serif;
+      }
+      .camera-frame {
+        position: relative;
+        overflow: hidden;
+        margin-top: 22px;
+        aspect-ratio: 4/3;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #02070b;
+        box-shadow: inset 0 0 0 1px rgba(100, 216, 238, 0.06);
+        transition:
+          border-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+      }
+      .face-frame {
+        position: absolute;
+        inset: 17% 27%;
+        border: 1px solid var(--cyan);
+        border-radius: 48% 48% 42% 42%;
+        opacity: 0.55;
+        transition:
+          border-color 180ms ease,
+          box-shadow 180ms ease,
+          opacity 180ms ease;
+      }
+      .camera-frame.face-detected {
+        border-color: var(--cyan);
+        box-shadow: inset 0 0 30px rgba(100, 216, 238, 0.08);
+      }
+      .camera-frame.face-detected .face-frame {
+        opacity: 1;
+        box-shadow: 0 0 24px rgba(100, 216, 238, 0.24);
+      }
+      .camera-frame.capturing .face-frame,
+      .camera-frame.registering .face-frame {
+        animation: scan 1.4s ease-in-out infinite;
+        border-color: var(--amber);
+      }
+      .camera-frame.success .face-frame {
+        border-color: var(--green);
+        box-shadow: 0 0 28px rgba(118, 224, 173, 0.3);
+      }
+      .camera-frame.error .face-frame {
+        border-color: var(--red);
+      }
+      #status {
+        min-height: 22px;
+        margin: 15px 0;
+        transition:
+          color 180ms ease,
+          opacity 180ms ease;
+      }
+      .error {
+        color: var(--red);
+      }
+      .ok {
+        color: var(--green);
+      }
+      .loading::after {
+        display: inline-block;
+        width: 1.2em;
+        content: "...";
+        animation: loading-dots 1.1s steps(3, end) infinite;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+      }
+      button,
+      a {
+        flex: 1;
+        padding: 13px 16px;
+        border-radius: 10px;
+        font:
+          700 13px Arial,
+          sans-serif;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button {
+        border: 0;
+        color: #06151c;
+        background: var(--cyan);
+        transition:
+          transform 160ms ease,
+          opacity 160ms ease,
+          background 160ms ease;
+      }
+      button:not(:disabled):hover {
+        transform: translateY(-1px);
+        background: #8be6f4;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      a {
+        border: 1px solid var(--line);
+        color: var(--ink);
+      }
+      @media (max-width: 600px) {
+        main {
+          padding: 18px;
+        }
+        h1 {
+          font-size: 34px;
+        }
+      }
+      @keyframes scan {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.7;
+        }
+        50% {
+          transform: scale(1.015);
+          opacity: 1;
+        }
+      }
+      @keyframes loading-dots {
+        0% {
+          content: "";
+        }
+        33% {
+          content: ".";
+        }
+        66% {
+          content: "..";
+        }
+        100% {
+          content: "...";
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">TissueGuard AI / enrollment</div>
+      <h1>Register your doctor face</h1>
+      <p>
+        Capture one clear face representation for future verification. The
+        camera frame is processed transiently; only normalized landmarks are
+        stored.
+      </p>
+      <div class="camera-frame">
+        <video id="camera" autoplay muted playsinline></video>
+        <div class="face-frame" aria-hidden="true"></div>
+      </div>
+      <p id="status" role="status" aria-live="polite">Starting camera...</p>
+      <div class="actions">
+        <button id="register" type="button" disabled aria-disabled="true">
+          Capture representation</button
+        ><a href="{{ url_for('logout') }}">Cancel</a>
+      </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script>
+      const camera = document.getElementById("camera");
+      const cameraFrame = document.querySelector(".camera-frame");
+      const status = document.getElementById("status");
+      const registerButton = document.getElementById("register");
+      let stream;
+      let faceMesh;
+      let animationFrame;
+      let latestLandmarks = null;
+      let state = "CAMERA_STARTING";
+      let requestInProgress = false;
+      let detectionLogged = false;
+
+      function setStatus(message, statusClass = "", stateName = state) {
+        status.textContent = message;
+        status.className = statusClass;
+        status.dataset.state = stateName;
+        const activeClass =
+          stateName === "FACE_DETECTED" || stateName === "READY_TO_CAPTURE"
+            ? "face-detected"
+            : "";
+        cameraFrame.className = `camera-frame ${stateName.toLowerCase().replaceAll("_", "-")} ${activeClass}`;
+      }
+
+      function setCaptureEnabled(enabled) {
+        registerButton.disabled = !enabled || requestInProgress;
+        registerButton.setAttribute(
+          "aria-disabled",
+          String(registerButton.disabled),
+        );
+      }
+
+      function hasValidLandmarks(landmarks) {
+        return (
+          Array.isArray(landmarks) &&
+          landmarks.length >= 468 &&
+          [1, 234, 454].every(
+            (index) =>
+              landmarks[index] &&
+              Number.isFinite(landmarks[index].x) &&
+              Number.isFinite(landmarks[index].y) &&
+              Number.isFinite(landmarks[index].z),
+          )
+        );
+      }
+
+      function stopCamera() {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+          animationFrame = null;
+        }
+        stream?.getTracks().forEach((track) => track.stop());
+      }
+
+      function normalizeLandmarks(landmarks) {
+        if (!hasValidLandmarks(landmarks)) {
+          throw new Error("No valid face landmarks are available.");
+        }
+        const nose = landmarks[1];
+        const leftFace = landmarks[234];
+        const rightFace = landmarks[454];
+        const scale = Math.max(
+          Math.hypot(leftFace.x - rightFace.x, leftFace.y - rightFace.y),
+          0.001,
+        );
+        return landmarks.flatMap((landmark) => [
+          Number(((landmark.x - nose.x) / scale).toFixed(6)),
+          Number(((landmark.y - nose.y) / scale).toFixed(6)),
+          Number(((landmark.z - nose.z) / scale).toFixed(6)),
+        ]);
+      }
+
+      function setFaceState(detected) {
+        if (requestInProgress) return;
+        state = detected ? "FACE_DETECTED" : "FACE_NOT_DETECTED";
+        if (detected) {
+          state = "READY_TO_CAPTURE";
+        }
+        setCaptureEnabled(detected);
+        setStatus(
+          detected
+            ? "Face detected — ready to capture"
+            : "Position your face inside the frame",
+          detected ? "ok" : "",
+          state,
+        );
+      }
+
+      async function processCameraFrame() {
+        if (
+          !faceMesh ||
+          camera.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+        ) {
+          animationFrame = requestAnimationFrame(processCameraFrame);
+          return;
+        }
+        try {
+          await faceMesh.send({ image: camera });
+        } catch (error) {
+          if (!requestInProgress) {
+            state = "ERROR";
+            setCaptureEnabled(false);
+            setStatus("Registration failed — please try again", "error");
+          }
+        }
+        animationFrame = requestAnimationFrame(processCameraFrame);
+      }
+
+      function handleFaceResults(results) {
+        const faces = results.multiFaceLandmarks || [];
+        const detected = faces.length === 1 && faces[0].length >= 468;
+        if (detected) {
+          latestLandmarks = faces[0];
+          if (!detectionLogged) {
+            console.log("[FACE] Face detected");
+            detectionLogged = true;
+          }
+          console.log("[FACE] Landmarks detected");
+        } else {
+          latestLandmarks = null;
+          detectionLogged = false;
+        }
+        setFaceState(detected && hasValidLandmarks(latestLandmarks));
+      }
+
+      async function startCamera() {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          state = "ERROR";
+          setStatus("Camera unavailable", "error", state);
+          return;
+        }
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+            audio: false,
+          });
+          camera.srcObject = stream;
+          await camera.play();
+          console.log("[FACE] Camera initialized");
+          state = "CAMERA_READY";
+          setStatus("Starting camera...", "", state);
+          faceMesh = new FaceMesh({
+            locateFile: (file) =>
+              `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+          });
+          faceMesh.setOptions({
+            maxNumFaces: 2,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6,
+          });
+          faceMesh.onResults(handleFaceResults);
+          state = "FACE_NOT_DETECTED";
+          setCaptureEnabled(false);
+          setStatus("Position your face inside the frame", "", state);
+          animationFrame = requestAnimationFrame(processCameraFrame);
+        } catch (error) {
+          stopCamera();
+          state = "ERROR";
+          setCaptureEnabled(false);
+          setStatus("Camera unavailable", "error", state);
+        }
+      }
+
+      registerButton.addEventListener("click", async () => {
+        if (!hasValidLandmarks(latestLandmarks) || requestInProgress) return;
+        console.log("[FACE] Capture clicked");
+        requestInProgress = true;
+        state = "CAPTURING";
+        setCaptureEnabled(false);
+        registerButton.textContent = "Capturing...";
+        setStatus("Capturing face representation...", "loading", state);
+        try {
+          // Capture current frame as JPEG data URL
+          const canvas = document.createElement("canvas");
+          const captureWidth = Math.min(camera.videoWidth || 640, 640);
+          const captureHeight = Math.min(camera.videoHeight || 480, 480);
+          canvas.width = captureWidth;
+          canvas.height = captureHeight;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(camera, 0, 0, captureWidth, captureHeight);
+          const imageData = canvas.toDataURL("image/jpeg", 0.7);
+
+          state = "REGISTERING";
+          registerButton.textContent = "Registering...";
+          setStatus("Registering face...", "loading", state);
+
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000);
+          let response;
+          try {
+            response = await fetch("{{ url_for('register_doctor_face') }}", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify({ image_data: imageData }),
+              signal: controller.signal,
+            });
+          } finally {
+            clearTimeout(timeout);
+          }
+          console.log("[FACE] Registration response received");
+          const result = await response.json();
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || "Face registration failed. Please try again.");
+          }
+          state = "SUCCESS";
+          registerButton.textContent = "Registered";
+          setStatus("Face registered successfully", "ok", state);
+          console.log("[FACE] Registration successful");
+          stopCamera();
+          setTimeout(() => window.location.assign(result.redirect), 800);
+        } catch (error) {
+          state = "ERROR";
+          if (error.name === "AbortError") {
+            setStatus("Verification timed out. Please try again.", "error", state);
+          } else {
+            const detail = error.message && error.message !== "Failed to fetch" ? ` ${error.message}` : "";
+            setStatus(`Face registration failed. Please try again.${detail}`, "error", state);
+          }
+        } finally {
+          requestInProgress = false;
+          if (state === "ERROR") {
+            registerButton.textContent = "Capture representation";
+            setCaptureEnabled(hasValidLandmarks(latestLandmarks));
+          }
+        }
+      });
+      window.addEventListener("beforeunload", stopCamera);
+      startCamera();
+    </script>
+  </body>
+</html>

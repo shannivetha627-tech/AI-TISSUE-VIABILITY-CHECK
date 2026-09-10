@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TissueGuard AI | Tissue Viability Monitoring</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="landing">
+    <nav class="landing-nav" aria-label="Primary navigation">
+      <a class="landing-brand" href="#top" aria-label="TissueGuard AI home"
+        >TissueGuard <b>AI</b></a
+      >
+      <button
+        class="landing-menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="landing-menu"
+        data-landing-menu
+      >
+        <span></span><span></span><span></span
+        ><span class="sr-only">Open menu</span>
+      </button>
+      <div class="landing-menu" id="landing-menu">
+        <div class="landing-menu-head">
+          <span>TissueGuard <b>AI</b></span>
+          <button
+            class="landing-menu-close"
+            type="button"
+            data-landing-close
+            aria-label="Close navigation"
+          >
+            ×
+          </button>
+        </div>
+        <a href="#top">Home</a><a href="#how-it-works">How it works</a
+        ><a href="#monitoring">Monitoring</a><a href="#security">Security</a>
+        <a class="nav-login" href="{{ url_for('login') }}"
+          >Doctor login <span aria-hidden="true">↗</span></a
+        >
+        <a class="nav-patient-login" href="{{ url_for('login') }}"
+          >Patient login</a
+        >
+      </div>
+    </nav>
+    <div class="landing-backdrop" data-landing-backdrop></div>
+    <main id="top">
+      <section class="landing-main">
+        <div class="landing-copy" data-reveal>
+          <p class="eyebrow">AI-powered microsurgical monitoring</p>
+          <h1>
+            Predict tissue viability. <span>Understand risk earlier.</span>
+          </h1>
+          <p class="lead">
+            AI-assisted postoperative monitoring that brings physiological
+            indicators and machine-learning analysis into one focused clinical
+            workspace.
+          </p>
+          <p class="landing-secondary">
+            TissueGuard AI brings patient observations, physiological
+            indicators, and machine-learning predictions together in one secure
+            clinical workspace.
+          </p>
+          <div class="landing-actions">
+            <a class="primary-action" href="#how-it-works"
+              >Explore the platform <span aria-hidden="true">→</span></a
+            ><a class="secondary-action" href="{{ url_for('login') }}"
+              >Secure doctor access <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <p class="action-note">
+            <span class="secure-dot"></span>Secure role-based clinical access
+          </p>
+        </div>
+        <div
+          class="signal-panel"
+          aria-label="System visualization of tissue, blood flow, oxygenation and AI analysis"
+          data-reveal
+        >
+          <div class="signal-header">
+            <span>Live system visualization</span
+            ><span class="signal-status"><i></i> Analysis ready</span>
+          </div>
+          <img
+            src="{{ url_for('static', filename='media/Medical_tissue_viability_3D_visualization.gif') }}"
+            alt="Animated tissue visualization representing blood flow and tissue monitoring"
+            class="tissue-animation"
+          />
+          <div class="signal-scan" aria-hidden="true"></div>
+          <div class="signal-caption">
+            <span>TISSUE / PERFUSION / OXYGENATION</span
+            ><strong>AI-assisted analysis</strong>
+          </div>
+        </div>
+      </section>
+      <div class="landing-trust">
+        <span>AI-assisted decision support</span><b>•</b
+        ><span>Designed for clinical review</span><b>•</b
+        ><span>Prototype workspace</span>
+      </div>
+
+      <section
+        class="landing-section capability-section"
+        aria-labelledby="capability-title"
+      >
+        <div class="section-intro">
+          <p class="eyebrow">A clearer clinical picture</p>
+          <h2 id="capability-title">Signals in one focused workspace.</h2>
+          <p>
+            Review the indicators that matter to postoperative tissue viability
+            without losing the context around them.
+          </p>
+        </div>
+        <div class="capability-grid">
+          <article class="capability-card" data-reveal style="--delay: 0ms">
+            <span class="capability-label">AI intelligence</span>
+            <span class="capability-icon">✦</span>
+            <h3>AI-assisted prediction</h3>
+            <p>Machine-learning based tissue viability assessment.</p>
+            <span class="card-arrow" aria-hidden="true">→</span>
+            <span class="card-visual neural-visual" aria-hidden="true"
+              ><i></i><i></i><i></i
+            ></span>
+          </article>
+          <article class="capability-card" data-reveal style="--delay: 100ms">
+            <span class="capability-label">Physiology</span>
+            <span class="capability-icon">◌</span>
+            <h3>Physiological monitoring</h3>
+            <p>
+              Review oxygenation, blood flow, perfusion and temperature
+              indicators.
+            </p>
+            <span class="card-arrow" aria-hidden="true">→</span>
+            <span class="card-visual waveform-visual" aria-hidden="true"></span>
+          </article>
+          <article class="capability-card" data-reveal style="--delay: 200ms">
+            <span class="capability-label">Access control</span>
+            <span class="capability-icon">⌁</span>
+            <h3>Secure clinical access</h3>
+            <p>Role-based access for doctors and patients.</p>
+            <span class="card-arrow" aria-hidden="true">→</span>
+            <span class="card-visual shield-visual" aria-hidden="true">◈</span>
+          </article>
+          <article class="capability-card" data-reveal style="--delay: 300ms">
+            <span class="capability-label">Clinical continuity</span>
+            <span class="capability-icon">↗</span>
+            <h3>Prediction history</h3>
+            <p>
+              Track previous viability predictions and clinical observations.
+            </p>
+            <span class="card-arrow" aria-hidden="true">→</span>
+            <span class="card-visual bars-visual" aria-hidden="true"
+              ><i></i><i></i><i></i><i></i
+            ></span>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="landing-section process-section"
+        id="how-it-works"
+        aria-labelledby="process-title"
+      >
+        <div class="section-intro">
+          <p class="eyebrow">How TissueGuard AI works</p>
+          <h2 id="process-title">From patient data to clinical insight.</h2>
+        </div>
+        <div class="process-grid" data-timeline>
+          <article data-reveal>
+            <b>01</b>
+            <h3>Patient data</h3>
+            <p>Capture relevant patient and postoperative parameters.</p>
+          </article>
+          <article data-reveal>
+            <b>02</b>
+            <h3>AI analysis</h3>
+            <p>Analyze physiological indicators using the trained ML model.</p>
+          </article>
+          <article data-reveal>
+            <b>03</b>
+            <h3>Viability prediction</h3>
+            <p>Generate an AI-assisted tissue viability prediction.</p>
+          </article>
+          <article data-reveal>
+            <b>04</b>
+            <h3>Clinical review</h3>
+            <p>
+              Present the result and supporting indicators for professional
+              review.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="landing-section monitoring-section"
+        id="monitoring"
+        aria-labelledby="monitoring-title"
+      >
+        <div class="section-intro">
+          <p class="eyebrow">What we monitor</p>
+          <h2 id="monitoring-title">
+            The parameters already in your workflow.
+          </h2>
+          <p>Only the existing project features are represented here.</p>
+        </div>
+        <div class="monitoring-grid">
+          <article class="metric-tile" data-reveal style="--delay: 0ms">
+            <span>♡</span>
+            <h3>Heart rate</h3>
+            <p>Cardiac rate indicator used in postoperative assessment.</p>
+          </article>
+          <article class="metric-tile" data-reveal style="--delay: 80ms">
+            <span>⌁</span>
+            <h3>Blood pressure</h3>
+            <p>
+              Systolic pressure indicator recorded with the patient profile.
+            </p>
+          </article>
+          <article class="metric-tile" data-reveal style="--delay: 160ms">
+            <span>O₂</span>
+            <h3>SpO₂</h3>
+            <p>Oxygen saturation indicator used as part of assessment.</p>
+          </article>
+          <article class="metric-tile" data-reveal style="--delay: 240ms">
+            <span>°</span>
+            <h3>Tissue temperature</h3>
+            <p>Local temperature indicator for tissue monitoring.</p>
+          </article>
+          <article class="metric-tile" data-reveal style="--delay: 320ms">
+            <span>≈</span>
+            <h3>Blood flow</h3>
+            <p>Flow indicator supporting the tissue viability review.</p>
+          </article>
+          <article class="metric-tile" data-reveal style="--delay: 400ms">
+            <span>◉</span>
+            <h3>Perfusion index</h3>
+            <p>Perfusion indicator included in the clinical snapshot.</p>
+          </article>
+          <article class="metric-tile" data-reveal style="--delay: 480ms">
+            <span>◷</span>
+            <h3>Capillary refill time</h3>
+            <p>Recorded refill measure available for review.</p>
+          </article>
+          <article class="metric-tile" data-reveal style="--delay: 560ms">
+            <span>↕</span>
+            <h3>Surgery duration</h3>
+            <p>Procedure duration included in the patient parameters.</p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="landing-section preview-section"
+        aria-labelledby="preview-title"
+      >
+        <div class="preview-copy">
+          <p class="eyebrow">System preview</p>
+          <h2 id="preview-title">A shared language for tissue viability.</h2>
+          <p>
+            This interface illustration shows how indicators and an AI-assisted
+            result can sit together for professional review. Values shown are
+            illustrative only, not live patient data.
+          </p>
+          <a class="text-link" href="{{ url_for('login') }}"
+            >Enter the clinical workspace <span aria-hidden="true">↗</span></a
+          >
+        </div>
+        <div
+          class="analysis-window"
+          aria-label="Illustrative tissue viability analysis panel"
+        >
+          <div class="analysis-top">
+            <span>Tissue viability analysis</span
+            ><span class="analysis-live"><i></i>System preview</span>
+          </div>
+          <div class="analysis-body">
+            <div class="analysis-visual">
+              <img
+                src="{{ url_for('static', filename='media/tissue_viability_comparison.gif') }}"
+                alt="Illustrative tissue visualization"
+              /><span>AI signal map</span>
+            </div>
+            <div class="analysis-data">
+              <div><span>Blood flow</span><strong>Normal</strong></div>
+              <div><span>Oxygenation</span><strong>95%</strong></div>
+              <div><span>Perfusion</span><strong>6.57</strong></div>
+              <div><span>Temperature</span><strong>36.5°C</strong></div>
+              <div class="analysis-result">
+                <span>AI prediction</span><strong>Viable</strong
+                ><small>Illustrative result</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="landing-section workspace-section"
+        aria-labelledby="workspace-title"
+      >
+        <div class="section-intro">
+          <p class="eyebrow">Two paths, one secure workspace</p>
+          <h2 id="workspace-title">
+            Built around the people reviewing the record.
+          </h2>
+        </div>
+        <div class="workspace-grid">
+          <article>
+            <span class="workspace-kicker">01 / Doctor workspace</span>
+            <h3>Review with context.</h3>
+            <p>
+              Review patient parameters, run AI-assisted viability predictions,
+              and monitor prediction history.
+            </p>
+            <a class="text-link" href="{{ url_for('login') }}"
+              >Doctor login <span aria-hidden="true">↗</span></a
+            >
+          </article>
+          <article>
+            <span class="workspace-kicker">02 / Patient workspace</span>
+            <h3>Stay close to your record.</h3>
+            <p>
+              Securely view your own clinical information and prediction
+              history. Patients cannot access other patients' information.
+            </p>
+            <a class="text-link" href="{{ url_for('login') }}"
+              >Patient login <span aria-hidden="true">↗</span></a
+            >
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="security-section"
+        id="security"
+        aria-labelledby="security-title"
+      >
+        <div class="security-intro">
+          <p class="eyebrow">Access by design</p>
+          <h2 id="security-title">Built around secure clinical access.</h2>
+          <p>
+            Clear boundaries keep each workspace focused on the people it is
+            intended for.
+          </p>
+        </div>
+        <div class="security-grid">
+          <article>
+            <b>01</b>
+            <h3>Role-based access</h3>
+            <p>Separate doctor and patient access paths.</p>
+          </article>
+          <article>
+            <b>02</b>
+            <h3>Doctor face verification</h3>
+            <p>
+              Prototype biometric verification enabled as an additional doctor
+              access layer.
+            </p>
+          </article>
+          <article>
+            <b>03</b>
+            <h3>Confidential records</h3>
+            <p>Patient information is restricted to authorized access.</p>
+          </article>
+          <article>
+            <b>04</b>
+            <h3>Secure sessions</h3>
+            <p>Authenticated sessions protect clinical workspace access.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="final-cta">
+        <p class="eyebrow">TissueGuard AI</p>
+        <h2>Turn postoperative data into clearer clinical insight.</h2>
+        <p>
+          TissueGuard AI provides an AI-assisted workspace for monitoring tissue
+          viability and reviewing postoperative indicators.
+        </p>
+        <div class="landing-actions">
+          <a class="primary-action" href="{{ url_for('login') }}"
+            >Doctor login <span aria-hidden="true">↗</span></a
+          ><a class="secondary-action" href="{{ url_for('login') }}"
+            >Patient login</a
+          >
+        </div>
+      </section>
+    </main>
+    <footer class="landing-footer">
+      <div>
+        <a class="landing-brand" href="#top">TissueGuard <b>AI</b></a>
+        <p>AI-assisted postoperative tissue viability monitoring.</p>
+      </div>
+      <div class="footer-links">
+        <a href="{{ url_for('login') }}">Doctor login</a
+        ><a href="{{ url_for('login') }}">Patient login</a>
+      </div>
+      <small
+        >Confidential clinical workspace • Prototype AI decision-support
+        system</small
+      >
+    </footer>
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+  </body>
+</html>

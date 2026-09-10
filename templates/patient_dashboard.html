@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Tissue Monitoring | TissueGuard AI</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="patient-shell">
+    <main
+      class="patient-workspace"
+      data-history-url="{{ url_for('patient_predictions_api') }}"
+    >
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Private patient portal</p>
+          <h1>My tissue monitoring</h1>
+          <div class="live-clock" id="live-clock" style="margin-top: 0.5rem; font-weight: 500; color: var(--text-primary);"></div>
+          <p class="subtitle">
+            Secure, read-only access to your clinical record
+          </p>
+        </div>
+        <a class="outline-button" href="{{ url_for('logout') }}">Log out</a>
+      </header>
+      <section class="patient-hero">
+        <div>
+          <p class="eyebrow">Welcome back</p>
+          <h2>{{ patient.patient_id }}</h2>
+          <p class="muted">
+            Your information is visible only to your authenticated account.
+          </p>
+        </div>
+        <span class="record-pill">Personal record</span>
+      </section>
+      <section class="patient-results">
+        <article
+          id="latest-result-panel"
+          class="panel result-panel {{ 'result-good' if latest_prediction and latest_prediction.prediction == 'Yes' else 'result-alert' }}"
+        >
+          <p class="eyebrow">Current tissue viability</p>
+          {% if latest_prediction %}
+          <h2 id="latest-prediction-label">
+            {{ 'Viable' if latest_prediction.prediction == 'Yes' else 'Not
+            viable' }}
+          </h2>
+          <div id="latest-probability" class="result-score">
+            {{ latest_prediction.probability }}<small>%</small>
+          </div>
+          <p class="result-caption">Latest AI-assisted prediction</p>
+          <p id="latest-updated" class="result-updated">
+            Updated: {{ latest_prediction.updated_display_time }}
+          </p>
+          <div class="result-details">
+            <div>
+              <span>AI confidence</span>
+              {% set cert = latest_prediction.probability if latest_prediction.prediction == 'Yes' else (100 - latest_prediction.probability) %}
+              <strong id="latest-confidence"
+                >{% if cert >= 80 %}High{% elif cert >= 60 %}Moderate{% else %}Low{% endif %}</strong
+              >
+            </div>
+          </div>
+          {% else %}
+          <h2>Awaiting prediction</h2>
+          <p class="muted">No prediction has been recorded yet.</p>
+          {% endif %}
+          <p class="disclaimer">
+            AI-assisted prediction. Clinical decisions must be made by qualified
+            medical professionals.
+          </p>
+        </article>
+        <article class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Clinical snapshot</p>
+              <h2>Monitoring parameters</h2>
+            </div>
+          </div>
+          <div class="data-grid compact">
+            <div class="data-item">
+              <span>Heart rate</span
+              ><strong
+                >{{ patient.heart_rate if patient.heart_rate is not none else
+                'Not recorded' }}</strong
+              >
+            </div>
+            <div class="data-item">
+              <span>Blood pressure</span
+              ><strong
+                >{{ patient.blood_pressure_sys if patient.blood_pressure_sys is
+                not none else 'Not recorded' }}</strong
+              >
+            </div>
+            <div class="data-item">
+              <span>SpO2</span
+              ><strong
+                >{{ patient.spo2 if patient.spo2 is not none else 'Not recorded'
+                }}</strong
+              >
+            </div>
+            <div class="data-item">
+              <span>Tissue temperature</span
+              ><strong
+                >{{ patient.tissue_temperature if patient.tissue_temperature is
+                not none else 'Not recorded' }}</strong
+              >
+            </div>
+            <div class="data-item">
+              <span>Blood flow</span
+              ><strong
+                >{{ patient.blood_flow if patient.blood_flow is not none else
+                'Not recorded' }}</strong
+              >
+            </div>
+            <div class="data-item">
+              <span>Perfusion index</span
+              ><strong
+                >{{ patient.perfusion_index if patient.perfusion_index is not
+                none else 'Not recorded' }}</strong
+              >
+            </div>
+            <div class="data-item">
+              <span>Capillary refill</span
+              ><strong
+                >{{ patient.capillary_refill_time if
+                patient.capillary_refill_time is not none else 'Not recorded'
+                }}</strong
+              >
+            </div>
+            <div class="data-item">
+              <span>Surgery duration</span
+              ><strong
+                >{{ patient.surgery_duration if patient.surgery_duration is not
+                none else 'Not recorded' }}</strong
+              >
+            </div>
+          </div>
+        </article>
+      </section>
+      <section class="panel history-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Your audit trail</p>
+            <h2>Prediction history</h2>
+          </div>
+          <a class="history-link" href="{{ url_for('patient_history_api') }}"
+            >View full history <span aria-hidden="true">→</span></a
+          >
+        </div>
+        <div id="live-status" class="live-status" role="status" aria-live="polite">
+          <span class="live-status-dot" aria-hidden="true"></span>
+          <span id="live-status-text">Live monitoring connected</span>
+        </div>
+        {% if predictions %}
+        <div id="history-list" class="history-list timeline">
+          {% for item in predictions %}
+          <article class="history-row {{ 'history-latest' if item.is_latest else '' }}" data-history-id="{{ item.id }}">
+            <span class="timeline-dot" aria-hidden="true"></span>
+            <div class="history-main">
+              {% if item.is_latest %}<span class="history-badge">Latest prediction</span>{% endif %}
+              <time>{{ item.display_time }}</time>
+              <strong class="{{ 'text-good' if item.prediction == 'Yes' else 'text-alert' }}">{{ 'Viable' if item.prediction == 'Yes' else 'Not viable' }}</strong>
+              <span class="history-confidence">{{ item.probability }}% confidence</span>
+              {% if item.source != 'system' %}<small>{{ item.source }}</small>{% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        {% if history_has_more %}
+        <a class="history-link history-more" href="{{ url_for('patient_dashboard', history_page=history_page + 1) }}">Show older events <span aria-hidden="true">→</span></a>
+        {% endif %}
+        {% else %}
+        <p id="history-empty" class="muted">No prediction history available.</p>
+        {% endif %}
+      </section>
+      <footer>
+        Private patient access · AI-assisted clinical decision support
+      </footer>
+    </main>
+    <script src="{{ url_for('static', filename='js/patient_dashboard.js') }}" defer></script>
+  </body>
+</html>

@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tissue Viability Monitoring | TissueGuard AI</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="app-shell">
+    <button
+      class="menu-toggle"
+      type="button"
+      aria-label="Open navigation"
+      data-menu-toggle
+    >
+      <span aria-hidden="true">☰</span
+      ><span class="sr-only">Open navigation</span>
+    </button>
+    <aside class="sidebar" data-sidebar>
+      <button
+        class="sidebar-close"
+        type="button"
+        data-sidebar-close
+        aria-label="Close navigation"
+      >
+        ×
+      </button>
+      <div class="brand">
+        <span class="brand-mark">TG</span><span>TissueGuard <b>AI</b></span>
+      </div>
+      <div class="sidebar-label">Clinical workspace</div>
+      <nav class="side-nav" aria-label="Dashboard navigation">
+        <a class="active" href="#overview">Overview</a
+        ><a href="#patient">Patients</a><a href="#monitor">Monitoring</a
+        ><a href="#history">History</a>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="secure-dot"></span> Secure session<a
+          class="logout-link"
+          href="{{ url_for('logout') }}"
+          >Log out</a
+        >
+      </div>
+    </aside>
+    <div class="sidebar-backdrop" data-sidebar-backdrop></div>
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AI-assisted clinical intelligence</p>
+          <h1>Tissue Viability Monitoring</h1>
+          <p class="subtitle">AI-assisted postoperative tissue assessment</p>
+        </div>
+        <div class="doctor-chip">
+          <span class="avatar">{{ username[:1]|upper }}</span
+          ><span>Dr. {{ username }}</span>
+        </div>
+      </header>
+      <section class="metric-grid" id="overview" aria-label="Dashboard summary">
+        <article class="metric-card">
+          <span class="metric-label">Total patients</span
+          ><strong>{{ dashboard_summary.total_patients }}</strong
+          ><span class="metric-foot">Records in registry</span>
+        </article>
+        <article class="metric-card metric-green">
+          <span class="metric-label">Stable</span
+          ><strong>{{ dashboard_summary.stable }}</strong
+          ><span class="metric-foot">Latest viable result</span>
+        </article>
+        <article class="metric-card metric-amber">
+          <span class="metric-label">At risk</span
+          ><strong>{{ dashboard_summary.at_risk }}</strong
+          ><span class="metric-foot">Requires clinical review</span>
+        </article>
+        <article class="metric-card metric-blue">
+          <span class="metric-label">Recent predictions</span
+          ><strong>{{ dashboard_summary.recent_predictions }}</strong
+          ><span class="metric-foot">Recorded in database</span>
+        </article>
+      </section>
+      <section class="panel search-panel" id="patient">
+        <div>
+          <p class="eyebrow">Patient lookup</p>
+          <h2>Find a patient record</h2>
+          <p class="muted">Search authorized clinical records by patient ID.</p>
+        </div>
+        <form
+          method="post"
+          action="{{ url_for('doctor_dashboard') }}"
+          class="search-form"
+        >
+          <label class="sr-only" for="patient-id">Patient ID</label
+          ><input
+            id="patient-id"
+            name="patient_id"
+            value="{{ searched_id }}"
+            placeholder="P000047"
+            autocomplete="off"
+            required
+          /><button type="submit">Search</button>
+        </form>
+      </section>
+      {% if searched_id and patient is none %}
+      <div class="notice notice-warn" role="alert">
+        <strong>No patient record found.</strong> Check the Patient ID and try
+        again.
+      </div>
+      {% endif %} {% if patient %}
+      <section class="panel patient-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Patient profile</p>
+            <h2>{{ patient.patient_id }}</h2>
+          </div>
+          <span class="record-pill">Confidential record</span>
+        </div>
+        <div class="data-grid">
+          {% for label, value in [('Age', patient.age), ('Gender',
+          patient.gender), ('BMI', patient.bmi), ('Diabetes', patient.diabetes),
+          ('Smoking', patient.smoking), ('Hypertension', patient.hypertension),
+          ('Heart rate', patient.heart_rate), ('Blood pressure',
+          patient.blood_pressure_sys), ('SpO2', patient.spo2), ('Tissue
+          temperature', patient.tissue_temperature), ('Blood flow',
+          patient.blood_flow), ('Perfusion index', patient.perfusion_index),
+          ('Capillary refill', patient.capillary_refill_time), ('Surgery
+          duration', patient.surgery_duration), ('Flap type',
+          patient.flap_type)] %}
+          <div class="data-item">
+            <span>{{ label }}</span
+            ><strong
+              >{{ value if value is not none else 'Not recorded' }}</strong
+            >
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% if prediction_result %} {% set viable = prediction_result.prediction ==
+      'Yes' %}
+      <section class="results-grid" id="monitor">
+        <article
+          class="panel result-panel {{ 'result-good' if viable else 'result-alert' }}"
+        >
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">AI tissue viability</p>
+              <h2>{{ 'Viable' if viable else 'Not viable' }}</h2>
+            </div>
+            <span
+              class="status-symbol"
+              aria-label="{{ 'Stable tissue indicators' if viable else 'Tissue viability concern' }}"
+              >{{ '✓' if viable else '!' }}</span
+            >
+          </div>
+          <div class="result-score">
+            {% if prediction_result.probability is not none %}{{
+            prediction_result.probability }}<small>%</small>{% else %}--{% endif
+            %}
+          </div>
+          <p class="result-caption">
+            {{ 'Stable tissue indicators' if viable else 'Tissue viability
+            concern' }}
+          </p>
+          <div class="result-details">
+            <div>
+              <span>AI confidence</span
+              ><strong
+                >{{ prediction_result.confidence or 'Unavailable' }}</strong
+              >
+            </div>
+            <div>
+              <span>Recorded status</span
+              ><strong
+                >{{ prediction_result.recorded_viability or 'Not recorded'
+                }}</strong
+              >
+            </div>
+            <div>
+              <span>Comparison</span
+              ><strong
+                >{{ prediction_result.comparison or 'Unavailable' }}</strong
+              >
+            </div>
+          </div>
+          <p class="disclaimer">
+            AI-assisted prediction. Clinical decisions must be made by qualified
+            medical professionals.
+          </p>
+        </article>
+        <article
+          class="panel tissue-panel"
+          data-tissue
+          data-blood-flow="{{ patient.blood_flow or '' }}"
+          data-spo2="{{ patient.spo2 or 0 }}"
+          data-perfusion="{{ patient.perfusion_index or 0 }}"
+          data-temperature="{{ patient.tissue_temperature or 0 }}"
+        >
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Live indicators</p>
+              <h2>Tissue Perfusion Monitor</h2>
+            </div>
+            <span class="pulse-dot" aria-label="Monitoring active"></span>
+          </div>
+          <div
+            class="tissue-video-container"
+            aria-label="Animated tissue viability visualization"
+          >
+            <img
+              class="tissue-video"
+              src="{{ url_for('static', filename='media/tissue_viability_comparison.gif') }}"
+              alt="Animated tissue viability visualization"
+            />
+          </div>
+          <div class="indicator-list">
+            <div>
+              <span>Blood flow</span
+              ><b data-indicator="blood-flow"
+                >{{ patient.blood_flow or 'Not recorded' }}</b
+              ><em></em>
+            </div>
+            <div>
+              <span>Oxygenation</span
+              ><b
+                >{{ patient.spo2 if patient.spo2 is not none else 'Not recorded'
+                }}{% if patient.spo2 is not none %}%{% endif %}</b
+              ><em style="--level: {{ patient.spo2 or 0 }}%"></em>
+            </div>
+            <div>
+              <span>Perfusion</span
+              ><b
+                >{{ patient.perfusion_index if patient.perfusion_index is not
+                none else 'Not recorded' }}</b
+              ><em
+                style="--level: {{ (patient.perfusion_index or 0) * 10 }}%"
+              ></em>
+            </div>
+            <div>
+              <span>Temperature</span
+              ><b
+                >{{ patient.tissue_temperature if patient.tissue_temperature is
+                not none else 'Not recorded' }}</b
+              ><em style="--level: 70%"></em>
+            </div>
+          </div>
+        </article>
+      </section>
+      <section class="panel history-panel" id="history">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Audit trail</p>
+            <h2>Prediction history</h2>
+          </div>
+          <span class="muted">Newest first</span>
+        </div>
+        {% if patient_history %}
+        <div class="history-list">
+          {% for item in patient_history %}
+          <div class="history-row">
+            <time>{{ item.display_time or 'Time unavailable' }}</time
+            ><strong
+              class="{{ 'text-good' if item.prediction == 'Yes' else 'text-alert' }}"
+              >{{ 'Viable' if item.prediction == 'Yes' else 'Not viable'
+              }}</strong
+            ><span>{{ item.probability }}% probability{% if item.is_latest %} · Latest{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">No prediction history available for this patient.</p>
+        {% endif %}
+      </section>
+      {% endif %}{% endif %}
+      <footer>
+        Confidential clinical workspace · Prototype biometric verification
+        enabled
+      </footer>
+    </main>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  </body>
+</html>

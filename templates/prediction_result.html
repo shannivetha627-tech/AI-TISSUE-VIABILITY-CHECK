@@ -1,0 +1,59 @@
+# ========================================================= # AI TISSUE
+VIABILITY PREDICTION # =========================================================
+@app.route( "/doctor/predict/<patient_id
+  >", methods=["POST"] ) def predict_tissue(patient_id): #
+  ----------------------------------------------------- # SECURITY CHECK #
+  ----------------------------------------------------- if session.get( "role",
+  "" ).lower() != "doctor": return """
+  <h1>Access Denied</h1>
+  <p>Only doctors can perform predictions.</p>
+  """, 403 # ----------------------------------------------------- # FIND
+  PATIENT # ----------------------------------------------------- patient =
+  Patient.query.filter_by( patient_id=patient_id ).first() if patient is None:
+  return """
+  <h1>Patient Not Found</h1>
+  """, 404 # ----------------------------------------------------- # LOAD
+  TRAINED MODEL # ----------------------------------------------------- import
+  joblib MODEL_PATH = os.path.join( BASE_DIR, "saved_models",
+  "random_forest.pkl" ) model_data = joblib.load( MODEL_PATH ) #
+  ----------------------------------------------------- # GET MODEL COMPONENTS #
+  ----------------------------------------------------- model =
+  model_data["model"] feature_columns = model_data[ "feature_columns" ] encoders
+  = model_data[ "encoders" ] target_encoder = model_data[ "target_encoder" ] #
+  ----------------------------------------------------- # CREATE PATIENT INPUT #
+  ----------------------------------------------------- patient_data = { "Age":
+  patient.age, "Gender": patient.gender, "BMI": patient.bmi, "Diabetes":
+  patient.diabetes, "Smoking": patient.smoking, "Hypertension":
+  patient.hypertension, "Heart_Rate": patient.heart_rate, "Blood_Pressure_Sys":
+  patient.blood_pressure_sys, "SpO2": patient.spo2, "Tissue_Temperature":
+  patient.tissue_temperature, "Blood_Flow": patient.blood_flow,
+  "Perfusion_Index": patient.perfusion_index, "Capillary_Refill_Time":
+  patient.capillary_refill_time, "Surgery_Duration": patient.surgery_duration,
+  "Flap_Type": patient.flap_type } #
+  ----------------------------------------------------- # PREPARE FEATURES #
+  ----------------------------------------------------- import pandas as pd
+  input_data = pd.DataFrame( [patient_data] ) #
+  ----------------------------------------------------- # APPLY ENCODERS #
+  ----------------------------------------------------- for column, encoder in
+  encoders.items(): if column in input_data.columns: input_data[column] =
+  encoder.transform( input_data[column].astype(str) ) #
+  ----------------------------------------------------- # KEEP EXACT MODEL
+  FEATURE ORDER # -----------------------------------------------------
+  input_data = input_data[ feature_columns ] #
+  ----------------------------------------------------- # MAKE PREDICTION #
+  ----------------------------------------------------- prediction_encoded =
+  model.predict( input_data )[0] prediction_label =
+  target_encoder.inverse_transform( [prediction_encoded] )[0] #
+  ----------------------------------------------------- # GET PROBABILITY #
+  ----------------------------------------------------- probability = None if
+  hasattr( model, "predict_proba" ): probabilities = model.predict_proba(
+  input_data )[0] probability = float( max(probabilities) ) #
+  ----------------------------------------------------- # SAVE PREDICTION #
+  ----------------------------------------------------- prediction_record =
+  Prediction( patient_id=patient.patient_id, prediction=str( prediction_label ),
+  probability=probability ) db.session.add( prediction_record )
+  db.session.commit() # ----------------------------------------------------- #
+  DISPLAY RESULT # ----------------------------------------------------- return
+  render_template( "prediction_result.html", patient=patient, prediction=str(
+  prediction_label ), probability=probability )
+</patient_id>

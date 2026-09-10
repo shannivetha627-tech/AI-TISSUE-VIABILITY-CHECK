@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Login | TissueGuard AI</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="login-page">
+    <main class="login-wrap">
+      <header>
+        <p class="eyebrow">TissueGuard AI / secure access</p>
+        <h1>Welcome back.</h1>
+        <p>Choose the workspace associated with your account.</p>
+      </header>
+      {% if error %}
+      <div class="login-error" role="alert">{{ error }}</div>
+      {% endif %}
+      <section class="login-card">
+        <h2>Sign in</h2>
+        <form method="post" action="{{ url_for('login') }}">
+          <label for="login-type">Access type</label
+          ><select id="login-type" name="login_type" required>
+            <option value="">Select access type</option>
+            <option value="doctor">Doctor</option>
+            <option value="patient">Patient</option></select
+          ><label for="username">Username</label
+          ><input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            required
+          /><label for="password">Password</label
+          ><input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          /><button type="submit">Continue securely</button>
+        </form>
+        <a class="back" href="{{ url_for('home') }}">Back to TissueGuard AI</a>
+      </section>
+    </main>
+  </body>
+</html>

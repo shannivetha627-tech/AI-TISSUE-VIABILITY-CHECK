@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Doctor Verification | TissueGuard AI</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f5fbff;
+        --muted: #9bb2c6;
+        --panel: rgba(13, 33, 51, 0.86);
+        --line: rgba(133, 211, 239, 0.22);
+        --cyan: #64d8ee;
+        --green: #76e0ad;
+        --red: #ff9d9d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        background: radial-gradient(
+          circle at 50% 0%,
+          #173b55 0,
+          #07131f 48%,
+          #040a11 100%
+        );
+      }
+      .lock-shell {
+        width: min(100%, 960px);
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: 28px;
+        align-items: center;
+      }
+      .intro {
+        padding: 18px;
+      }
+      .eyebrow {
+        color: var(--cyan);
+        font:
+          700 11px/1.2 Arial,
+          sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      h1 {
+        max-width: 420px;
+        margin: 15px 0;
+        font-size: clamp(34px, 5vw, 58px);
+        line-height: 0.98;
+        font-weight: 500;
+      }
+      .intro p {
+        max-width: 380px;
+        color: var(--muted);
+        font:
+          15px/1.7 Arial,
+          sans-serif;
+      }
+      .lock-panel {
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: var(--panel);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(18px);
+      }
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 18px;
+        font:
+          700 12px Arial,
+          sans-serif;
+      }
+      .secure-badge {
+        padding: 8px 10px;
+        border: 1px solid rgba(118, 224, 173, 0.3);
+        border-radius: 99px;
+        color: var(--green);
+        background: rgba(118, 224, 173, 0.08);
+      }
+      .camera-frame {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 4 / 3;
+        border: 1px solid rgba(100, 216, 238, 0.45);
+        border-radius: 18px;
+        background: #02070b;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        transform: scaleX(-1);
+      }
+      .scan-line {
+        position: absolute;
+        left: 7%;
+        right: 7%;
+        top: 15%;
+        height: 2px;
+        background: var(--cyan);
+        box-shadow: 0 0 18px 3px rgba(100, 216, 238, 0.7);
+        animation: scan 3.2s ease-in-out infinite;
+      }
+      .face-frame {
+        position: absolute;
+        inset: 17% 27%;
+        border: 1px solid rgba(100, 216, 238, 0.8);
+        border-radius: 48% 48% 42% 42%;
+        box-shadow:
+          0 0 0 999px rgba(1, 8, 13, 0.2),
+          inset 0 0 24px rgba(100, 216, 238, 0.15);
+      }
+      .status {
+        min-height: 24px;
+        margin: 16px 0;
+        color: var(--muted);
+        font:
+          14px Arial,
+          sans-serif;
+      }
+      .status.ok {
+        color: var(--green);
+      }
+      .status.error {
+        color: var(--red);
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+      }
+      button,
+      a {
+        flex: 1;
+        padding: 13px 16px;
+        border-radius: 10px;
+        font:
+          700 13px Arial,
+          sans-serif;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button {
+        border: 0;
+        color: #06151c;
+        background: var(--cyan);
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+      a {
+        border: 1px solid var(--line);
+        color: var(--ink);
+      }
+      .note {
+        margin: 16px 0 0;
+        color: #718a9c;
+        font:
+          11px/1.5 Arial,
+          sans-serif;
+      }
+      @keyframes scan {
+        0%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.35;
+        }
+        50% {
+          transform: translateY(420%);
+          opacity: 1;
+        }
+      }
+      @media (max-width: 720px) {
+        .lock-shell {
+          grid-template-columns: 1fr;
+        }
+        .intro {
+          padding: 0 4px;
+        }
+        h1 {
+          font-size: 42px;
+        }
+        .lock-panel {
+          padding: 17px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .scan-line {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body data-challenge="{{ challenge }}">
+    <main class="lock-shell">
+      <section class="intro">
+        <div class="eyebrow">TissueGuard AI / access control</div>
+        <h1>Secure Doctor Verification</h1>
+        <p>
+          Password verification is complete. Allow camera access and place one
+          face inside the guide to continue to the clinical workspace.
+        </p>
+      </section>
+      <section class="lock-panel" aria-labelledby="camera-title">
+        <div class="panel-head">
+          <span id="camera-title">Identity checkpoint</span
+          ><span class="secure-badge">Secure session</span>
+        </div>
+        <div class="camera-frame">
+          <video id="camera" autoplay muted playsinline></video>
+          <div class="face-frame" aria-hidden="true"></div>
+          <div class="scan-line" aria-hidden="true"></div>
+        </div>
+        <p id="status" class="status" role="status">Initializing camera...</p>
+        <div class="actions">
+          <button id="verify" type="button" disabled>
+            Verify &amp; continue</button
+          ><a href="{{ url_for('logout') }}">Cancel</a>
+        </div>
+        <p class="note">
+          <a href="{{ url_for('register_doctor_face') }}"
+            >Register or replace your face representation</a
+          >
+        </p>
+        <p class="note">
+          Prototype liveness detection: this layered biometric verification is
+          not production-grade anti-spoofing.
+        </p>
+      </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/face_lock.js') }}"></script>
+  </body>
+</html>
