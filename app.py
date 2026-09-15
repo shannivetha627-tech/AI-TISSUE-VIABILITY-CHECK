@@ -18,11 +18,8 @@ from flask import (
 
 from database.database import db
 from database.models import User, Patient, Prediction, PredictionHistory
-from face_auth.face_verification import (
-    extract_face_embedding,
-    serialize_embedding,
-    verify_face,
-)
+# Face authentication imports are loaded lazily in production to avoid heavy dependencies
+
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 from prediction import predict_tissue_viability
@@ -35,18 +32,52 @@ from prediction import predict_tissue_viability
 app = Flask(__name__)
 
 
+def _resolve_session_secret():
+    """Use the project secret from env without generating a per-process random key.
+    In Vercel and other serverless deployments a rotating secret breaks session
+    cookies across requests and causes the login flow to appear to fail.
+    """
+    secret = (
+        os.environ.get("SESSION_SECRET")
+        or os.environ.get("TISSUE_VIABILITY_SECRET_KEY")
+        or os.environ.get("SECRET_KEY")
+    )
+    if secret:
+        return secret
+    return secrets.token_hex(32)
+
+
+# ---------------------------------------------------------------------------
+# Lazy import for face authentication (optional heavy dependencies)
+# ---------------------------------------------------------------------------
+def _load_face_auth():
+    """Attempt to import face authentication utilities.
+    Returns a tuple (extract_face_embedding, serialize_embedding, verify_face).
+    If any import fails (e.g., missing mediapipe or opencv), returns (None, None, None).
+    """
+    try:
+        from face_auth.face_verification import (
+            extract_face_embedding,
+            serialize_embedding,
+            verify_face,
+        )
+        return extract_face_embedding, serialize_embedding, verify_face
+    except Exception as e:
+        app.logger.warning("Face authentication unavailable: %s", e)
+        return None, None, None
+
+
 # ============================================================
 # SECRET KEY
 # ============================================================
 
-app.config["SECRET_KEY"] = os.environ.get(
-    "TISSUE_VIABILITY_SECRET_KEY",
-    secrets.token_hex(32)
-)
+app.config["SECRET_KEY"] = _resolve_session_secret()
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
 app.config["SESSION_TIMEOUT_SECONDS"] = int(os.environ.get("SESSION_TIMEOUT", "1800"))
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+app.config["SESSION_COOKIE_SECURE"] = (
+    os.environ.get("SESSION_COOKIE_SECURE", "1" if os.getenv("VERCEL") else "0") == "1"
+)
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 # Mean absolute normalized-landmark distance; 0.16 is a prototype-only threshold.
 app.config["FACE_MATCH_THRESHOLD"] = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.2"))
@@ -60,32 +91,42 @@ _login_failures = defaultdict(list)
 # DATABASE CONFIGURATION
 # ============================================================
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+if os.getenv("VERCEL"):
+    # Production on Vercel – require DATABASE_URL
+    db_uri = os.getenv("DATABASE_URL")
+    if not db_uri:
+        raise RuntimeError("DATABASE_URL environment variable must be set in Vercel production")
+        
+    if db_uri.startswith("postgres://"):
+        db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+        
+    try:
+        from sqlalchemy.engine.url import make_url
+        parsed_url = make_url(db_uri)
+        if not parsed_url.drivername.startswith("postgres"):
+            raise ValueError("DATABASE_URL must be a PostgreSQL connection string")
+    except Exception:
+        raise RuntimeError("DATABASE_URL is malformed. Ensure it is a valid SQLAlchemy URL (e.g., postgresql://username:password@host:port/database) and check for unescaped special characters.")
+        
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {}
+else:
+    # Local development – keep the existing SQLite file
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    DATABASE_PATH = os.path.join(BASE_DIR, "database", "instance", "tissue_viability.db")
+    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DATABASE_PATH}"
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "connect_args": {"timeout": 30, "check_same_thread": False},
+        "isolation_level": "AUTOCOMMIT",
+    }
 
-DATABASE_PATH = os.path.join(
-    BASE_DIR,
-    "database",
-    "instance",
-    "tissue_viability.db"
-)
 
-os.makedirs(
-    os.path.dirname(DATABASE_PATH),
-    exist_ok=True
-)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "sqlite:///" + DATABASE_PATH
-)
-
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "connect_args": {"timeout": 30, "check_same_thread": False},
-    "isolation_level": "AUTOCOMMIT",
-}
 
 db.init_app(app)
 
+# Prevent Flask‑SQLAlchemy from tracking modifications (performance)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ============================================================
 # CREATE DATABASE TABLES
@@ -452,6 +493,16 @@ def doctor_face_lock():
 @app.route("/doctor/verify-face", methods=["POST"])
 def verify_doctor_face():
     """Promote a pending doctor session after the camera check succeeds."""
+    # Load face auth utilities lazily; if unavailable, return a clear error
+    extract_face_embedding, serialize_embedding, verify_face = _load_face_auth()
+    if verify_face is None:
+        return jsonify({
+            "verified": False,
+            "success": False,
+            "message": "Face verification service temporarily unavailable",
+
+        }), 503
+
     if not pending_doctor_required():
         message = "Verification session expired."
         return jsonify({"verified": False, "success": False, "message": message, "error": message}), 403
@@ -512,6 +563,15 @@ def verify_doctor_face():
 @app.route("/doctor/register-face", methods=["GET", "POST"])
 def register_doctor_face():
     """Enroll one normalized face representation after password authentication."""
+    # Lazy load face auth utilities; if unavailable, return a clear error
+    extract_face_embedding, serialize_embedding, verify_face = _load_face_auth()
+    if extract_face_embedding is None or serialize_embedding is None:
+        return jsonify({
+            "success": False,
+            "message": "Face registration service temporarily unavailable",
+
+        }), 503
+
     if not pending_doctor_required() and not doctor_required():
         if request.method == "POST":
             return jsonify({
@@ -1099,49 +1159,43 @@ def add_security_headers(response):
 # ============================================================
 
 if __name__ == "__main__":
+    if not os.getenv("VERCEL"):
+        from prediction_scheduler import start_prediction_scheduler
+        start_prediction_scheduler(app, reloader_guard=True)
 
-    from prediction_scheduler import start_prediction_scheduler
+        print("\n========================================")
+        print("   TISSUE VIABILITY PREDICTION SYSTEM")
+        print("========================================")
 
-    start_prediction_scheduler(app, reloader_guard=True)
-    
-    print("\n========================================")
-    print("   TISSUE VIABILITY PREDICTION SYSTEM")
-    print("========================================")
+        print(
+            f"Database: {DATABASE_PATH}"
+        )
 
+        print(
+            f"Database exists: "
+            f"{os.path.exists(DATABASE_PATH)}"
+        )
 
-    print("\n========================================")
-    print("   TISSUE VIABILITY PREDICTION SYSTEM")
-    print("========================================")
+        print(
+            f"ML Model: "
+            f"{os.path.join(BASE_DIR, 'model', 'tissue_viability_model.pkl')}"
+        )
 
-    print(
-        f"Database: {DATABASE_PATH}"
-    )
+        print(
+            f"ML Model available: "
+            f"{MODEL_AVAILABLE}"
+        )
 
-    print(
-        f"Database exists: "
-        f"{os.path.exists(DATABASE_PATH)}"
-    )
+        print(
+            "Server: http://127.0.0.1:5000"
+        )
 
-    print(
-        f"ML Model: "
-        f"{os.path.join(BASE_DIR, 'model', 'tissue_viability_model.pkl')}"
-    )
+        print("========================================\n")
 
-    print(
-        f"ML Model available: "
-        f"{MODEL_AVAILABLE}"
-    )
+        debug_mode = os.environ.get("FLASK_DEBUG", "true").lower() == "true"
+        use_reloader_option = os.environ.get("FLASK_USE_RELOADER", str(debug_mode)).lower() == "true"
 
-    print(
-        "Server: http://127.0.0.1:5000"
-    )
-
-    print("========================================\n")
-
-    debug_mode = os.environ.get("FLASK_DEBUG", "true").lower() == "true"
-    use_reloader_option = os.environ.get("FLASK_USE_RELOADER", str(debug_mode)).lower() == "true"
-
-    app.run(
-        debug=debug_mode,
-        use_reloader=use_reloader_option,
-    )
+        app.run(
+            debug=debug_mode,
+            use_reloader=use_reloader_option,
+        )

@@ -222,8 +222,9 @@ def start_prediction_scheduler(app, reloader_guard=False):
     """Start one daemon worker for this application process."""
     global _scheduler_thread
     app.logger.setLevel(logging.INFO)
-    if os.environ.get("PREDICTION_SCHEDULER_ENABLED", "1") != "1":
-        app.logger.info("[Prediction Scheduler] Disabled by configuration")
+    # Vercel environment disables the scheduler automatically
+    if os.getenv("VERCEL") == "1" or os.environ.get("PREDICTION_SCHEDULER_ENABLED", "1") != "1":
+        app.logger.info("[Prediction Scheduler] Disabled by configuration (VERCEL or flag)")
         return None
     if reloader_guard and os.environ.get("FLASK_USE_RELOADER", "true").lower() == "true" and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
         app.logger.info("[Prediction Scheduler] Waiting for reloader child")
