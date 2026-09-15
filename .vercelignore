@@ -40,5 +40,9 @@ benchmark_*.py
 *_benchmark.py
 validation/
 
+# Additional heavy directories that may contain installed dependencies
+scratch/**
+__pycache__/**
+
 # Any other large generated files not referenced by the code
 # (Add more patterns if discovered)
