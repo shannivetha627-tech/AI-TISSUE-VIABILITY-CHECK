@@ -4,6 +4,7 @@ import json
 import secrets
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from flask import (
@@ -30,6 +31,8 @@ from prediction import predict_tissue_viability
 # ============================================================
 
 app = Flask(__name__)
+PROJECT_ROOT = Path(__file__).resolve().parent
+BASE_DIR = str(PROJECT_ROOT)
 
 
 def _resolve_session_secret():
@@ -112,7 +115,6 @@ if os.getenv("VERCEL"):
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {}
 else:
     # Local development – keep the existing SQLite file
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     DATABASE_PATH = os.path.join(BASE_DIR, "database", "instance", "tissue_viability.db")
     os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DATABASE_PATH}"
@@ -133,8 +135,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # ============================================================
 
 with app.app_context():
-    db.session.execute(text("PRAGMA journal_mode=WAL"))
-    db.session.commit()
+    if db.engine.url.get_backend_name() == "sqlite":
+        db.session.execute(text("PRAGMA journal_mode=WAL"))
+        db.session.commit()
 
 
 # ============================================================
