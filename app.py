@@ -133,8 +133,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # ============================================================
 
 with app.app_context():
-    db.session.execute(text("PRAGMA journal_mode=WAL"))
-    db.session.commit()
+    if db.engine.url.get_backend_name() == "sqlite":
+        db.session.execute(text("PRAGMA journal_mode=WAL"))
+        db.session.commit()
 
 
 # ============================================================
